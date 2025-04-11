@@ -38,18 +38,31 @@ wss.on("connection", (ws) => {
   ws.on("message", async (message) => {
     console.log(`Received: ${message}`);
 
-    if (message.toString() === "ping") {
-      try {
-        // Optionally query Neon
-        const system_status = await sql`
-          SELECT *
-          FROM system_status
-          LIMIT 1
-        `;
-        ws.send(`pong: ${JSON.stringify(system_status)}`);
-      } catch (error) {
-        console.error("Error querying Neon DB:", error);
-        ws.send(`Error querying Neon DB: ${error.message}`);
+    switch (message.toString()) {
+      case "getEnvData": {
+        try {
+          await sql`BEGIN`;
+
+          const [env] = await sql`
+            SELECT temperature_celsius, humidity_percent, recorded_at
+            FROM environment_stats
+            ORDER BY recorded_at DESC
+            LIMIT 1
+          `;
+
+          await sql`COMMIT`;
+          ws.send(
+            "env",
+            JSON.stringify({
+              temperature: env?.temperature_celsius ?? null,
+              humidity: env?.humidity_percent ?? null,
+              recorded_at: env?.recorded_at ?? null,
+            }),
+          );
+        } catch (err) {
+          await sql`ROLLBACK`;
+          ws.send("Get enviroment data failed .", err);
+        }
       }
     }
   });
