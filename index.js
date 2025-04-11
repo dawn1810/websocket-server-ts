@@ -52,7 +52,6 @@ wss.on("connection", (ws) => {
 
           await sql`COMMIT`;
           ws.send(
-            "env",
             JSON.stringify({
               temperature: env?.temperature_celsius ?? null,
               humidity: env?.humidity_percent ?? null,
