@@ -29,14 +29,23 @@ wss.on("connection", (ws) => {
     console.log(`Received: ${message}`);
 
     if (message.toString() === "ping") {
-      // Optionally query Neon
-      const result = await sql`SELECT NOW()`;
-      ws.send(`pong: ${result.rows[0].now}`);
+      try {
+        // Optionally query Neon
+        const result = await sql`SELECT NOW()`;
+        ws.send(`pong: ${result.rows[0].now}`);
+      } catch (error) {
+        console.error("Error querying Neon DB:", error);
+        ws.send("Error querying Neon DB");
+      }
     }
   });
 
   ws.on("close", () => {
     console.log("Client disconnected");
+  });
+
+  ws.on("error", (error) => {
+    console.error("WebSocket error:", error);
   });
 });
 
