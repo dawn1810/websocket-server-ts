@@ -1,6 +1,7 @@
 {
   "name": "websocket-server-ts",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
   "main": "index.js",
   "scripts": {
