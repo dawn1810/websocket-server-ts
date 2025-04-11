@@ -8,7 +8,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // Set up port for Railway
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // Initialize Express
 const app = express();
@@ -19,8 +19,17 @@ const server = createServer(app);
 // Create WebSocket server
 const wss = new WebSocketServer({ server });
 
+// Handle server error to avoid EADDRINUSE error
+server.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(`Port ${PORT} is already in use`);
+    process.exit(1);
+  } else {
+    throw error;
+  }
+});
+
 // Connect to Neon DB
-console.log(process.env.DATABASE_URL);
 const sql = neon(process.env.DATABASE_URL);
 
 wss.on("connection", (ws) => {
@@ -32,8 +41,12 @@ wss.on("connection", (ws) => {
     if (message.toString() === "ping") {
       try {
         // Optionally query Neon
-        const result = await sql`SELECT NOW()`;
-        ws.send(`pong: ${result.rows[0].now}`);
+        const system_status = await sql`
+          SELECT *
+          FROM system_status
+          LIMIT 1
+        `;
+        ws.send(`pong: ${JSON.stringify(system_status)}`);
       } catch (error) {
         console.error("Error querying Neon DB:", error);
         ws.send(`Error querying Neon DB: ${error.message}`);
