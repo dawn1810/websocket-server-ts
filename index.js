@@ -20,6 +20,7 @@ const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
 // Connect to Neon DB
+console.log(process.env.DATABASE_URL);
 const sql = neon(process.env.DATABASE_URL);
 
 wss.on("connection", (ws) => {
@@ -35,7 +36,7 @@ wss.on("connection", (ws) => {
         ws.send(`pong: ${result.rows[0].now}`);
       } catch (error) {
         console.error("Error querying Neon DB:", error);
-        ws.send("Error querying Neon DB");
+        ws.send(`Error querying Neon DB: ${error.message}`);
       }
     }
   });
