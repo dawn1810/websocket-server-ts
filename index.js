@@ -38,30 +38,53 @@ wss.on("connection", (ws) => {
   ws.on("message", async (message) => {
     console.log(`Received: ${message}`);
 
-    switch (message.toString()) {
-      case "getEnvData": {
-        try {
-          await sql`BEGIN`;
+    const { action, payload } = JSON.parse(message);
+    console.log(action, payload);
 
-          const [env] = await sql`
-            SELECT temperature_celsius, humidity_percent, recorded_at
-            FROM environment_stats
-            ORDER BY recorded_at DESC
-            LIMIT 1
-          `;
-
-          await sql`COMMIT`;
-          ws.send(
-            JSON.stringify({
-              temperature: env?.temperature_celsius ?? null,
-              humidity: env?.humidity_percent ?? null,
-              recorded_at: env?.recorded_at ?? null,
-            }),
-          );
-        } catch (err) {
-          await sql`ROLLBACK`;
-          ws.send("Get enviroment data failed .", err);
-        }
+    switch (action) {
+      case "getwifi":
+        ws.send(message);
+        break;
+      case "connectwifi":
+        ws.send(`connect:${payload.ssid}|${payload.pass}`);
+        break;
+      case "connectstatus":
+        ws.send(message);
+        break;
+      case "updateenv":
+        await sql`INSERT INTO environment_stats (temperature_celsius, humidity_percent, recorded_at) VALUES (${payload.temp}, ${payload.hum}, NOW())`;
+        ws.send(message);
+        break;
+      case "setpower": {
+        ws.send(`led1:${payload.power}`);
+        ws.send(`led2:${payload.power}`);
+        ws.send(`led3:${payload.power}`);
+        break;
+      }
+      case "setlight": {
+        const messageToSend = `led${payload.room}:${payload.lights}`;
+        ws.send(messageToSend, (error) => {
+          if (error) {
+            console.error("Failed to send message:", error);
+          } else {
+            console.log("Message sent successfully:", messageToSend);
+          }
+        });
+        break;
+      }
+      case "setfan": {
+        const messageToSend = `led1:${payload.fan}`;
+        ws.send(messageToSend, (error) => {
+          if (error) {
+            console.error("Failed to send message:", error);
+          } else {
+            console.log("Message sent successfully:", messageToSend);
+          }
+        });
+        break;
+      }
+      default: {
+        console.warn("Unknown action:", action);
       }
     }
   });
