@@ -39,7 +39,6 @@ wss.on("connection", (ws) => {
     console.log(`Received: ${message}`);
 
     const { action, payload } = JSON.parse(message);
-    console.log(action, payload);
 
     switch (action) {
       case "getwifi":
