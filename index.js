@@ -51,15 +51,16 @@ wss.on("connection", (ws) => {
         ws.send(message);
         break;
       case "updateenv":
+        console.log("aaaa");
         await sql`INSERT INTO environment_stats (temperature_celsius, humidity_percent, recorded_at) VALUES (${payload.temp}, ${payload.hum}, NOW())`;
         ws.send(message);
         break;
-      case "setpower": {
-        ws.send(`led1:${payload.power}`);
-        ws.send(`led2:${payload.power}`);
-        ws.send(`led3:${payload.power}`);
-        break;
-      }
+      // case "setpower": {
+      //   ws.send(`led1:${payload.power}`);
+      //   ws.send(`led2:${payload.power}`);
+      //   ws.send(`led3:${payload.power}`);
+      //   break;
+      // }
       case "setlight": {
         const messageToSend = `led${payload.room}:${payload.lights}`;
         ws.send(messageToSend, (error) => {
